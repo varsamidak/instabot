@@ -21,14 +21,16 @@ args = parser.parse_args()
 bot = Bot()
 bot.login(username=args.u, password=args.p,
           proxy=args.proxy)
-followerAndMedia = []
-f = utils.file("usersToFollow.txt")
+myFollowers = []
+myFollowing = []
+foler = utils.file("myFollowers.txt")
+foling = utils.file("myFollowing.txt")
 for username in args.users:
-    followers = bot.get_user_followers(username, 7000)
+    followers = bot.get_user_followers(username, 100000)
     for follower in followers:
-        media = []
-        sum_media = ""
-        media = bot.get_last_user_medias(follower, 3)
-        sum_media = ':'.join(str(m) for m in media)
-        followerAndMedia.append(follower + ":" + sum_media)
-    f.save_list(followerAndMedia)
+        myFollowers.append(follower)
+    foler.save_list(myFollowers)
+    followings = bot.get_user_following(username, 100000)
+    for following in followings:
+        myFollowing.append(following)
+    foling.save_list(myFollowing)

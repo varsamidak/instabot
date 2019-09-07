@@ -110,6 +110,9 @@ from .bot_unfollow import (
     unfollow_everyone,
     unfollow_non_followers,
     unfollow_users,
+    search_noobs,
+    unfollow_usersWithLessFollowers,
+    unrequest_users
 )
 from .bot_unlike import (
     unlike,
@@ -884,3 +887,12 @@ class Bot(object):
     # stats
     def save_user_stats(self, username, path=""):
         return save_user_stats(self, username, path=path)
+
+    def search_noobs(self):
+        return search_noobs(self)
+
+    def unfollow_usersWithLessFollowers(self):
+        return unfollow_usersWithLessFollowers(self)
+
+    def unrequest_users(self):
+        return unrequest_users(self)
