@@ -8,7 +8,7 @@ def unfollow(self, user_id):
 
     if not user_info:
         self.logger.info("Can't get user_id=%s info" % str(user_id))
-        return False  # No user_info
+        return True  # No user_info
 
     username = user_info.get("username")
 

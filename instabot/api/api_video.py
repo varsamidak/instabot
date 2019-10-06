@@ -162,7 +162,7 @@ def upload_video(self, video, caption=None, upload_id=None, thumbnail=None, opti
                 {"Content-Length": str(end - start), "Content-Range": content_range}
             )
             response = self.session.post(
-                upload_url, data=video_data[start : start + length]
+                upload_url, data=video_data[start: start + length]
             )
         self.session.headers = headers
 
@@ -256,7 +256,7 @@ def resize_video(fname, thumbnail=None):
     print("Analizing `{}`".format(fname))
     h_lim = {"w": 90.0, "h": 47.0}
     v_lim = {"w": 4.0, "h": 5.0}
-    d_lim = 30
+    d_lim = 60
     vid = mp.VideoFileClip(fname)
     (w, h) = vid.size
     deg = vid.rotation
