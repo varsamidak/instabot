@@ -1,3 +1,6 @@
+import random
+import time
+
 def download_stories(self, username):
     user_id = self.get_user_id_from_username(username)
     list_image, list_video = self.get_user_stories(user_id)
@@ -55,10 +58,12 @@ def watch_users_reels(self, user_ids, max_users=100):
         unseen_reels.extend(
             [r for r in reels_data["items"] if r["taken_at"] > last_reel_seen_at]
         )
+        random_sleep = round(random.uniform(2, 3), 2)
+        time.sleep(random_sleep)
 
     # See reels that were not seen before
     # TODO: add counters for watched stories
     if self.api.see_reels(unseen_reels):
         self.total["stories_viewed"] += len(unseen_reels)
         return True
-    return False
+    return True

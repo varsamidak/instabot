@@ -11,7 +11,8 @@ def follow(self, user_id):
         return False
     if not self.reached_limit("follows"):
         self.delay("follow")
-        if self.api.follow(user_id):
+        response = self.api.follow(user_id)
+        if response:
             msg = "===> FOLLOWED <==== `user_id`: {}.".format(user_id)
             self.console_print(msg, "green")
             self.total["follows"] += 1
@@ -58,7 +59,9 @@ def follow_users(self, results, bot):
         if self.reached_limit('follows'):
             self.logger.info("Out of follows for today.")
             break
-        random_sleep = round(random.uniform(60, 85), 2)
+        random_sleep = round(random.uniform(40, 120), 2)
+        if random.randint(1,10) == 10:
+            watch_random_stories(bot, idx, user_ids)
         if not self.follow(user_ids[idx]):
             random_sleep = round(random.uniform(3, 5), 2)
             if self.api.last_response.status_code == 404:
@@ -85,11 +88,37 @@ def follow_users(self, results, bot):
                     i = user_ids.index(user_ids[idx])
                     broken_items += user_ids[i:]
                     break
-        bot.like_medias(medias[idx])
+        if medias[idx]:
+            sampling = random.sample(medias[idx], random.randint(1,3))
+            bot.like_medias(sampling, False)
         self.logger.info("Waiting for {} sec...".format(random_sleep))
         time.sleep(random_sleep)
     self.logger.info("DONE: Followed {} users in total.".format(self.total['follows']))
     return broken_items
+
+
+def watch_random_stories(bot, idx, user_ids):
+    if bot.api.get_user_feed(user_ids[idx]):
+        if bot.api.last_json["items"]:
+            user_media = random.choice(bot.api.last_json["items"])
+    else:
+        print("Can't get feed of user_id=%s" % user_ids[idx])
+        return True
+    if user_media:
+        if not bot.api.get_media_likers(media_id=user_media["pk"]):
+            bot.logger.info(
+                "Can't get media likers of media_id='%s' by user_id='%s'"
+                % (user_media["id"], user_ids[idx])
+            )
+            return True
+    likers = bot.api.last_json["users"]
+    liker_ids = [
+                    str(u["pk"])
+                    for u in likers
+                    if not u["is_private"] and "latest_reel_media" in u
+                ][:10]
+    if bot.watch_users_reels(liker_ids):
+        bot.logger.info("Total stories viewed: %d" % bot.total["stories_viewed"])
 
 
 def follow_followers(self, user_id, nfollows=None):

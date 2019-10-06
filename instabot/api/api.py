@@ -58,7 +58,9 @@ class API(object):
 
         self.last_response = None
         self.total_requests = 0
-
+        self.first_block = False
+        self.second_block = False
+        self.final_block = False
         # Setup logging
         self.logger = logging.getLogger("[instabot_{}]".format(id(self)))
 
@@ -89,7 +91,7 @@ class API(object):
     def set_user(self, username, password, generate_all_uuids=True, set_device=True):
         self.username = username
         self.password = password
-
+        logging.basicConfig()
         self.logger = logging.getLogger("[instabot_{}]".format(self.username))
 
         if set_device is True:
@@ -352,6 +354,11 @@ class API(object):
             self.session.proxies["http"] = scheme + self.proxy
             self.session.proxies["https"] = scheme + self.proxy
 
+    def call_profile(self, user_id):
+        data = self.json_data({'user_id': user_id})
+        url = 'users/{user_id}/info/'.format(user_id=user_id)
+        return self.send_request(url, data)
+
     def send_request(  # noqa: C901
         self,
         endpoint,
@@ -407,18 +414,18 @@ class API(object):
                 self.logger.error(
                     "Request returns {} error!".format(response.status_code)
                 )
-            try:
-                response_data = json.loads(response.text)
-                if "feedback_required" in str(response_data.get("message")):
-                    self.logger.error(
-                        "ATTENTION!: `feedback_required`"
-                        + str(response_data.get("feedback_message"))
-                    )
-                    return "feedback_required"
-            except ValueError:
-                self.logger.error(
-                    "Error checking for `feedback_required`, response text is not JSON"
-                )
+ #           try:
+ #               response_data = json.loads(response.text)
+ #               if "feedback_required" in str(response_data.get("message")):
+ #                   self.logger.error(
+ #                       "ATTENTION!: `feedback_required`"
+ #                       + str(response_data.get("feedback_message"))
+ #                   )
+ #                   return "feedback_required"
+ #           except ValueError:
+ #               self.logger.error(
+ #                   "Error checking for `feedback_required`, response text is not JSON"
+ #               )
 
             if response.status_code == 429:
                 sleep_minutes = 5
@@ -474,14 +481,50 @@ class API(object):
                         )
                         return False
                 # End of Interactive Two-Factor Authentication
-                else:
-                    msg = "Instagram's error message: {}"
-                    self.logger.info(msg.format(response_data.get("message")))
-                    if "error_type" in response_data:
-                        msg = "Error type: {}".format(response_data["error_type"])
-                    self.logger.info(msg)
+                response_data = json.loads(response.text)
+                if (response_data.get('message') == 'Not authorized to view user'):
+                    self.logger.info("Account is private")
+                    self.last_json = json.loads(response.text)
+                    return False
+                if (response_data.get('message') == 'Media not found or unavailable'):
+                    self.logger.info("Post has been deleted")
+                    return False
+                if (response_data.get(
+                        'feedback_message') == 'This action was blocked. Please try again later. We restrict certain content and actions to protect our community. Tell us if you think we made a mistake.'):
+                    self.logger.error("Instagram error message: %s", response_data.get('message'))
+                    self.logger.error("Instagram error message: %s", response_data.get('feedback_message'))
+                    report = self.session.post(config.API_URL + 'repute/report_problem/instagram_like_add',
+                                               data={'_csrftoken': self.token,
+                                                     '_uid': self.user_id,
+                                                     '_uuid': self.uuid,
+                                                     },
+                                               allow_redirects=True)
+                    self.first_block = True
+                    if(self.final_block):
+                        time.sleep(60 * 60 * 24)
+                    elif(self.second_block):
+                        time.sleep(60 * 60)
+                        self.final_block = True
+                    elif(self.first_block):
+                        time.sleep(60 * 30)
+                        self.second_block = True
 
-            # For debugging
+
+                else:
+                    if 'error_type' in response_data:
+                        msg = 'Error type: {}'.format(response_data['error_type'])
+                    self.logger.info("Instagram error message: %s", response_data.get('message'))
+                    self.logger.info("Instagram error message: %s", response_data.get('feedback_message'))
+                    return False
+            elif response.status_code == 502:
+                response_data = json.loads(response.text)
+                self.logger.info("ERROR 502!")
+                self.logger.info("Instagram error message: %s", response_data.get('message'))
+                return True
+            elif response.status_code == 500:
+                self.logger.info("ERROR 500!")
+                return False
+                # For debugging
             try:
                 self.last_response = response
                 self.last_json = json.loads(response.text)

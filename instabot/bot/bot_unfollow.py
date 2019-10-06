@@ -75,9 +75,10 @@ def search_noobs(self):
     following = self.get_user_following('276887698')
     friends = self.read_list_from_file('friends.txt')
     pro = self.read_list_from_file('pro-users.txt')
+    whitelist = self.read_list_from_file('whitelist.txt')
     mass = self.read_list_from_file('usersMassfollowers.txt')
     for user in following:
-        if user not in friends and user not in pro and user not in mass:
+        if user not in friends and user not in pro and user not in mass and user not in whitelist:
             user_info = self.get_user_info(user)
             time.sleep(5)
             if user_info["media_count"] < 40 or user_info["follower_count"] < 1200 and float(

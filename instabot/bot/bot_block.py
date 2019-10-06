@@ -1,12 +1,11 @@
 import random
+from instabot import utils
 
 from tqdm import tqdm
 
 
 def block(self, user_id):
     user_id = self.convert_to_user_id(user_id)
-    if self.check_not_bot(user_id):
-        return True
     if not self.reached_limit("blocks"):
         self.delay("block")
         if self.api.block(user_id):
@@ -54,14 +53,20 @@ def unblock_users(self, user_ids):
 
 def block_bots(self):
     self.logger.info("Going to block bots.")
-    your_followers = self.followers
-    your_likers = self.get_user_likers(self.user_id)
-    not_likers = list(set(your_followers) - set(your_likers))
-    random.shuffle(not_likers)
-    for user in tqdm(not_likers):
+    bots = self.read_list_from_file('myBotFollowers.txt')
+    for user in tqdm(bots):
+        self.block(user)
+
+def search_bots(self):
+    self.logger.info("Searching bots...")
+    your_followers = self.get_user_followers('276887698')
+    bots = []
+    for user in tqdm(your_followers[-500:]):
         if not self.check_not_bot(user):
             self.logger.info(
                 "Found bot: "
                 "https://instagram.com/%s/" % self.get_user_info(user)["username"]
             )
-            self.block(user)
+            bots.append(user)
+    botsFile = utils.file("myBotFollowers.txt")
+    botsFile.save_list(bots)

@@ -8,7 +8,7 @@ import time
 from .. import utils
 from ..api import API
 from .bot_archive import archive, archive_medias, unarchive_medias
-from .bot_block import block, block_bots, block_users, unblock, unblock_users
+from .bot_block import block, block_bots, search_bots, block_users, unblock, unblock_users
 from .bot_checkpoint import load_checkpoint, save_checkpoint
 from .bot_comment import (
     comment,
@@ -97,7 +97,7 @@ from .bot_like import (
     like_users,
 )
 from .bot_photo import download_photo, download_photos, upload_photo
-from .bot_stats import save_user_stats
+from .bot_stats import save_user_stats, analyze_media
 from .bot_story import download_stories, upload_story_photo, watch_users_reels
 from .bot_support import (
     check_if_file_exists,
@@ -127,22 +127,32 @@ from .bot_video import download_video, upload_video
 class Bot(object):
     def __init__(
         self,
-        whitelist_file="whitelist.txt",
-        blacklist_file="blacklist.txt",
-        comments_file="comments.txt",
-        followed_file="followed.txt",
-        unfollowed_file="unfollowed.txt",
-        skipped_file="skipped.txt",
-        friends_file="friends.txt",
+        whitelist_file='whitelist.txt',
+        blacklist_file='blacklist.txt',
+        comments_file='comments.txt',
+        followed_file='followed.txt',
+        unfollowed_file='unfollowed.txt',
+        skipped_file='skipped.txt',
+        requests_file='requests.txt',
+        friends_file='friends.txt',
+        following_file='myFollowing.txt',
+        followers_file='myFollowers.txt',
+        bot_followers_file='myBotFollowers.txt',
+        quotes_file='quotes.txt',
+        tags_file='tags.txt',
+        hashtags_file='hashtags.txt',
+        non_followers_file='non-followers.txt',
+        toArchive='toArchive.txt',
+        archived='archived.txt',
         base_path="",
         proxy=None,
-        max_likes_per_day=1000,
-        max_unlikes_per_day=1000,
+        max_likes_per_day=800,
+        max_unlikes_per_day=800,
         max_follows_per_day=350,
-        max_unfollows_per_day=350,
+        max_unfollows_per_day=500,
         max_comments_per_day=100,
-        max_blocks_per_day=100,
-        max_unblocks_per_day=100,
+        max_blocks_per_day=300,
+        max_unblocks_per_day=300,
         max_likes_to_like=100,
         min_likes_to_like=20,
         max_messages_per_day=300,
@@ -152,10 +162,10 @@ class Bot(object):
         filter_previously_followed=False,
         filter_business_accounts=False,
         filter_verified_accounts=False,
-        max_followers_to_follow=5000,
-        min_followers_to_follow=10,
-        max_following_to_follow=2000,
-        min_following_to_follow=10,
+        max_followers_to_follow=20000,
+        min_followers_to_follow=200,
+        max_following_to_follow=2500,
+        min_following_to_follow=200,
         max_followers_to_following_ratio=15,
         max_following_to_followers_ratio=15,
         min_media_count_to_follow=3,
@@ -168,8 +178,8 @@ class Bot(object):
         block_delay=30,
         unblock_delay=30,
         message_delay=60,
-        stop_words=("shop", "store", "free"),
-        blacklist_hashtags=["#shop", "#store", "#free"],
+        stop_words=("porn", "naked", "sex", "fuck", "follow"),
+        blacklist_hashtags=[],
         blocked_actions_protection=True,
         verbosity=True,
         device=None,
@@ -263,19 +273,39 @@ class Bot(object):
         followed_file = os.path.join(base_path, followed_file)
         unfollowed_file = os.path.join(base_path, unfollowed_file)
         skipped_file = os.path.join(base_path, skipped_file)
+        requests_file = os.path.join(base_path, requests_file)
         friends_file = os.path.join(base_path, friends_file)
+        following_file = os.path.join(base_path, following_file)
+        followers_file = os.path.join(base_path, followers_file)
+        bot_followers_file = os.path.join(base_path, bot_followers_file)
+        non_followers_file = os.path.join(base_path, non_followers_file)
+        quotes_file=os.path.join(base_path, quotes_file)
+        tags_file=os.path.join(base_path, tags_file)
+        hashtags_file=os.path.join(base_path, hashtags_file)
         comments_file = os.path.join(base_path, comments_file)
         blacklist_file = os.path.join(base_path, blacklist_file)
         whitelist_file = os.path.join(base_path, whitelist_file)
+        toArchive = os.path.join(base_path, toArchive)
+        archived = os.path.join(base_path, archived)
 
         # Database files
         self.followed_file = utils.file(followed_file)
         self.unfollowed_file = utils.file(unfollowed_file)
         self.skipped_file = utils.file(skipped_file)
+        self.requests_file = utils.file(requests_file)
         self.friends_file = utils.file(friends_file)
+        self.following_file = utils.file(following_file)
+        self.followers_file = utils.file(followers_file)
+        self.bot_followers_file = utils.file(bot_followers_file)
+        self.non_followers_file = utils.file(non_followers_file)
+        self.quotes_file=utils.file(quotes_file),
+        self.tags_file=utils.file(tags_file),
+        self.hashtags_file=utils.file(hashtags_file),
         self.comments_file = utils.file(comments_file)
         self.blacklist_file = utils.file(blacklist_file)
         self.whitelist_file = utils.file(whitelist_file)
+        self.toArchive = utils.file(toArchive)
+        self.archived = utils.file(archived)
 
         self.proxy = proxy
         self.verbosity = verbosity
@@ -610,7 +640,7 @@ class Bot(object):
     def like_medias(
         self,
         media_ids,
-        check_media=True,
+        check_media=False,
         container_module="feed_timeline",
         username=None,
         user_id=None,
@@ -736,8 +766,8 @@ class Bot(object):
     def follow(self, user_id):
         return follow(self, user_id)
 
-    def follow_users(self, user_ids):
-        return follow_users(self, user_ids)
+    def follow_users(self, user_ids, bot):
+        return follow_users(self, user_ids, bot)
 
     def follow_followers(self, user_id, nfollows=None):
         return follow_followers(self, user_id, nfollows)
@@ -856,6 +886,9 @@ class Bot(object):
     def block_bots(self):
         return block_bots(self)
 
+    def search_bots(self):
+        return search_bots(self)
+
     # filter
     def filter_medias(
         self, media_items, filtration=True, quiet=False, is_comment=False
@@ -896,3 +929,6 @@ class Bot(object):
 
     def unrequest_users(self):
         return unrequest_users(self)
+
+    def analyze_media(self, user_id, amount=None, filtration=False):
+        return analyze_media(self, user_id, amount, filtration)

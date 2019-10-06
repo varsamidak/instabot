@@ -1,6 +1,6 @@
 import datetime
 import os
-
+import tqdm
 
 def get_tsv_line(dictionary):
     line = ""
@@ -47,3 +47,40 @@ def save_user_stats(self, username, path=""):
         dump_data(data_to_save, file_path)
         self.logger.info("Stats saved at %s." % data_to_save["date"])
     return False
+
+def analyze_media(self, username, amount, filtration = False):
+    if not username:
+        return False
+    user_id = self.convert_to_user_id(username)
+    medias = self.get_last_user_medias(user_id, amount)
+    if not medias:
+        self.logger.info(
+            "None medias received: account is closed or medias have been filtered."
+        )
+        return False
+    for media in medias:
+        media_info = self.get_media_info(media)
+        if media_info[0]["usertags"]:
+            for t in media_info[0]["usertags"]["in"]:
+                tag = t["user"]["username"]
+                tags_adder(self, tag)
+        text = media_info[0]["caption"]["text"] if media_info[0]["caption"] else ""
+        quotes_adder(self, text)
+    return False
+
+def tags_adder(self, tag):
+    tags = self.read_list_from_file('tags.txt')
+    if tag not in tags:
+        with open('tags.txt', "a") as file:
+            self.console_print('\n\033[93m Add tag %s to Tags... \033[0m'
+                               % tag)
+            file.write(str(tag) + "\n")
+            self.console_print('Done adding %s to tags.txt' % tag)
+    return
+
+def quotes_adder(self, quote):
+    caption = self.read_list_from_file('quotes.txt')
+    with open('quotes.txt', "a") as file:
+        file.write(quote.encode('utf-8') + "\n" + "\n" + "*******************" + "\n" + "\n")
+        self.console_print('Done adding to quotes.txt')
+    return

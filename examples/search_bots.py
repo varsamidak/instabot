@@ -30,4 +30,4 @@ bot.logger.info(
     " * have stopwords in user's info: "
     " %s " % str(bot.stop_words)
 )
-bot.block_bots()
+bot.search_bots()

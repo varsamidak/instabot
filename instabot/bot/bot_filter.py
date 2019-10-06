@@ -1,7 +1,7 @@
 """
     Filter functions for media and user lists.
 """
-
+import unicodedata
 
 def filter_medias(self, media_items, filtration=True, quiet=False, is_comment=False):
     if filtration:
@@ -89,18 +89,20 @@ def check_media(self, media_id):
 
 def search_stop_words_in_user(self, user_info):
     text = ""
-    if "biography" in user_info:
-        text += user_info["biography"].lower()
+    if user_info:
+        if "biography" in user_info:
+            text += user_info["biography"].lower()
 
-    if "username" in user_info:
-        text += user_info["username"].lower()
+        if "username" in user_info:
+            text += user_info["username"].lower()
 
-    if "full_name" in user_info:
-        text += user_info["full_name"].lower()
+        if "full_name" in user_info:
+            text += user_info["full_name"].lower()
 
-    for stop_word in self.stop_words:
-        if stop_word in text:
-            return True
+        for stop_word in self.stop_words:
+            if stop_word in text:
+                self.console_print(stop_word, "red")
+                return True
 
     return False
 
@@ -163,6 +165,7 @@ def check_user(self, user_id, unfollowing=False):  # noqa: C901
 
     skipped = self.skipped_file
     followed = self.followed_file
+    requests = self.requests_file
 
     if not unfollowing:
         if self.filter_previously_followed and user_id in followed.list:
@@ -180,14 +183,9 @@ def check_user(self, user_id, unfollowing=False):  # noqa: C901
             return False
     if "is_private" in user_info and self.filter_private_users:
         if user_info["is_private"]:
-            self.console_print("info: account is PRIVATE, skipping! ", "red")
-            skipped.append(user_id)
-            return False
-    if "is_business" in user_info and self.filter_business_accounts:
-        if user_info["is_business"]:
-            self.console_print("info: is BUSINESS, skipping!", "red")
-            skipped.append(user_id)
-            return False
+            self.console_print('info: account is PRIVATE! ', 'red')
+            requests.append(user_id)
+            return True
     if "is_verified" in user_info and self.filter_verified_accounts:
         if user_info["is_verified"]:
             self.console_print("info: is VERIFIED, skipping !", "red")
@@ -265,22 +263,24 @@ def check_not_bot(self, user_id):
         return False
 
     user_info = self.get_user_info(user_id)
-    if not user_info:
-        return True  # closed acc
 
     skipped = self.skipped_file
-    if (
-        "following_count" in user_info
-        and user_info["following_count"] > self.max_following_to_block
-    ):
-        msg = "following_count > bot.max_following_to_block, skipping!"
-        self.console_print(msg, "red")
-        skipped.append(user_id)
-        return False  # massfollower
 
     if search_stop_words_in_user(self, user_info):
         msg = "`bot.search_stop_words_in_user` found in user, skipping!"
+        self.console_print(msg, "red")
         skipped.append(user_id)
         return False
+
+    if user_info:
+        if user_info["follower_count"] < 10:
+            msg = "less than 10 followers!"
+            self.console_print(msg, "red")
+            return False
+
+        if user_info["has_anonymous_profile_picture"]:
+            msg = "no profile pic!"
+            self.console_print(msg, "red")
+            return False
 
     return True

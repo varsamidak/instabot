@@ -1,5 +1,6 @@
 from tqdm import tqdm
-
+import random
+import time
 
 def like(
     self,
@@ -145,6 +146,9 @@ def like_medias(
     self.logger.info("Going to like %d medias." % (len(medias)))
     feed_position = 0
     for media in tqdm(medias):
+        random_sleep = round(random.uniform(3, 6), 2)
+        self.logger.info("Waiting for {} sec...".format(random_sleep))
+        time.sleep(random_sleep)
         if not self.like(
             media,
             check_media=check_media,
