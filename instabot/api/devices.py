@@ -1,7 +1,7 @@
 # flake8: noqa
 # Devices taken from
 # https://github.com/mgp25/Instagram-API/blob/master/src/Devices/GoodDevices.php
-DEFAULT_DEVICE = "one_plus_7"
+DEFAULT_DEVICE = "samsung_galaxy_s7"
 # from https://www.apkmirror.com/apk/instagram/instagram-instagram/instagram-instagram-105-0-0-18-119-release/instagram-105-0-0-18-119-4-android-apk-download/
 INSTAGRAM_VERSION = "105.0.0.18.119"
 DEVICES = {
