@@ -47,7 +47,9 @@ def unblock_users(self, user_ids):
         if not self.unblock(user_id):
             self.error_delay()
             broken_items.append(user_id)
-    self.logger.info("DONE: Total unblocked %d users." % self.total["unblocks"])
+    self.logger.info(
+        "DONE: Total unblocked %d users." % self.total["unblocks"]
+    )
     return broken_items
 
 
@@ -65,7 +67,8 @@ def search_bots(self):
         if not self.check_not_bot(user):
             self.logger.info(
                 "Found bot: "
-                "https://instagram.com/%s/" % self.get_user_info(user)["username"]
+                "https://instagram.com/%s/"
+                % self.get_user_info(user)["username"]
             )
             bots.append(user)
     botsFile = utils.file("myBotFollowers.txt")
