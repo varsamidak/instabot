@@ -95,6 +95,7 @@ from .bot_like import (
     like_medias,
     like_timeline,
     like_user,
+    like_user_and_watch_stories,
     like_users,
 )
 from .bot_photo import download_photo, download_photos, upload_photo
@@ -207,6 +208,7 @@ class Bot(object):
             "archived",
             "unarchived",
             "stories_viewed",
+            "likesthreshold"
         ], 0)
 
         self.start_time = datetime.datetime.now()
@@ -711,6 +713,9 @@ class Bot(object):
 
     def like_user(self, user_id, amount=None, filtration=True):
         return like_user(self, user_id, amount, filtration)
+
+    def like_user_and_watch_stories(self, user_id, amount=None, filtration=False):
+        return like_user_and_watch_stories(self, user_id, amount, filtration)
 
     def like_hashtag(self, hashtag, amount=None):
         return like_hashtag(self, hashtag, amount)

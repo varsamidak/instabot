@@ -21,9 +21,15 @@ bot = Bot()
 bot.login(username=args.u, password=args.p, proxy=args.proxy)
 
 f = utils.file("non-followers.txt")
+f2 = utils.file("whitelist-id.txt")
+whitelisters = []
+for user in list(bot.whitelist_file.set):
+    bot.small_delay()
+    user_id = bot.convert_to_user_id(user)
+    whitelisters.append(user_id)
+f2.save_list(whitelisters)
 
-non_followers = set(bot.following_file) - set(bot.followers_file) - bot.friends_file.set - set(bot.whitelist_file)
-non_followers = list(non_followers)
+non_followers = list(bot.following_file.set - bot.whitelist_file.set - bot.friends_file.set - bot.followers_file.set)
 non_followers_names = []
 
 for user in non_followers:

@@ -30,5 +30,5 @@ for username in args.users:
     if len(medias):
         likers = bot.get_media_likers(medias[0])
         for liker in tqdm(likers):
-            bot.like_user(liker, amount=random.randint(2,4))
-            #bot.follow(liker)
+            numOfLikes = random.randint(2, 4)
+            bot.like_user_and_watch_stories(liker, amount=numOfLikes)

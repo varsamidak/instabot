@@ -196,16 +196,6 @@ def check_user(self, user_id, unfollowing=False):  # noqa: C901
             )
             skipped.append(user_id)
             return False
-    if "is_private" in user_info and self.filter_private_users:
-        if user_info["is_private"]:
-            self.console_print('info: account is PRIVATE! ', 'red')
-            requests.append(user_id)
-            return True
-    if "is_verified" in user_info and self.filter_verified_accounts:
-        if user_info["is_verified"]:
-            self.console_print("info: is VERIFIED, skipping !", "red")
-            skipped.append(user_id)
-            return False
 
     if follower_count < self.min_followers_to_follow:
         msg = "follower_count < bot.min_followers_to_follow, skipping!"

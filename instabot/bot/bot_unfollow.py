@@ -96,7 +96,8 @@ def unfollow_users(self, user_ids):
 def unfollow_non_followers(self, n_to_unfollows=None):
     self.logger.info("Unfollowing non-followers.")
     self.console_print(" ===> Start unfollowing non-followers <===", "red")
-    non_followers = set(self.following_file) - set(self.followers_file) - self.friends_file.set - set(self.whitelist_file)
+    non_followers = set(self.following_file) - set(self.followers_file) - self.friends_file.set - \
+                    set(self.whitelist_file)
     non_followers = list(non_followers)
     for user_id in tqdm(non_followers[:n_to_unfollows]):
         if self.reached_limit("unfollows"):
@@ -114,8 +115,11 @@ def search_noobs(self):
     pro = self.read_list_from_file('pro-users.txt')
     whitelist = self.read_list_from_file('whitelist.txt')
     mass = self.read_list_from_file('usersMassfollowers.txt')
+    noobs = self.read_list_from_file('users-noobs.txt')
+    lessfollowers = self.read_list_from_file('users-withLessFollowers.txt')
     for user in following:
-        if user not in friends and user not in pro and user not in mass and user not in whitelist:
+        if user not in friends and user not in pro and user not in mass and user not in whitelist and user not in noobs\
+                and user not in lessfollowers:
             user_info = self.get_user_info(user)
             time.sleep(5)
             if user_info["media_count"] < 40 or user_info["follower_count"] < 1200 and float(

@@ -2,20 +2,20 @@ from tqdm import tqdm
 import random
 import time
 
-def like(
-    self,
-    media_id,
-    check_media=True,
-    container_module="feed_short_url",
-    feed_position=0,
-    username=None,
-    user_id=None,
-    hashtag_name=None,
-    hashtag_id=None,
-    entity_page_name=None,
-    entity_page_id=None,
-):
 
+def like(
+        self,
+        media_id,
+        check_media=True,
+        container_module="feed_short_url",
+        feed_position=0,
+        username=None,
+        user_id=None,
+        hashtag_name=None,
+        hashtag_id=None,
+        entity_page_name=None,
+        entity_page_id=None,
+):
     if not self.reached_limit("likes"):
         if self.blocked_actions["likes"]:
             self.logger.warning("YOUR `LIKE` ACTION IS BLOCKED")
@@ -102,7 +102,7 @@ def like_comment(self, comment_id):
                 from datetime import timedelta
 
                 next_reset = (
-                    self.start_time.date() + timedelta(days=1)
+                        self.start_time.date() + timedelta(days=1)
                 ).strftime(
                     "%Y-%m-%d %H:%M:%S"
                 )
@@ -160,18 +160,17 @@ def like_media_comments(self, media_id):
 
 
 def like_medias(
-    self,
-    medias,
-    check_media=True,
-    container_module="feed_timeline",
-    username=None,
-    user_id=None,
-    hashtag_name=None,
-    hashtag_id=None,
-    entity_page_name=None,
-    entity_page_id=None,
+        self,
+        medias,
+        check_media=True,
+        container_module="feed_timeline",
+        username=None,
+        user_id=None,
+        hashtag_name=None,
+        hashtag_id=None,
+        entity_page_name=None,
+        entity_page_id=None,
 ):
-
     broken_items = []
     if not medias:
         self.logger.info("Nothing to like.")
@@ -180,16 +179,16 @@ def like_medias(
     feed_position = 0
     for media in tqdm(medias):
         if not self.like(
-            media,
-            check_media=check_media,
-            container_module=container_module,
-            feed_position=feed_position,
-            username=username,
-            user_id=user_id,
-            hashtag_name=hashtag_name,
-            hashtag_id=hashtag_id,
-            entity_page_name=entity_page_name,
-            entity_page_id=entity_page_id,
+                media,
+                check_media=check_media,
+                container_module=container_module,
+                feed_position=feed_position,
+                username=username,
+                user_id=user_id,
+                hashtag_name=hashtag_name,
+                hashtag_id=hashtag_id,
+                entity_page_name=entity_page_name,
+                entity_page_id=entity_page_id,
         ):
             self.error_delay()
             broken_items.append(media)
@@ -219,6 +218,45 @@ def like_user(self, user_id, amount=None, filtration=True):
         )
         return False
     return self.like_medias(medias[:amount], filtration)
+
+
+def like_user_and_watch_stories(self, username, amount=None, filtration=False):
+    """ Likes last user_id's medias """
+    followers = self.followers_file
+    if filtration:
+        if not self.check_user(username):
+            return False
+    self.logger.info("Liking user_%s's feed:" % username)
+    user_id = self.convert_to_user_id(username)
+    user_info = self.get_user_info(user_id)
+    if user_info and user_id not in followers and not user_info["is_private"]:
+        medias = self.get_user_medias(user_id, filtration=filtration)
+        if not medias:
+            self.logger.info(
+                "None medias received: account is "
+                "closed or medias have been filtered."
+            )
+            return False
+        if user_info["follower_count"] < 1000:
+            watch_stories(self, user_id)
+        random_time = round(random.uniform(20, 60), 2)
+        time.sleep(random_time)
+        result = self.like_medias(medias[:amount], filtration)
+    # every 100 likes sleep 15-25 min
+        if self.total["likes"] - self.total["likesthreshold"] > 0:
+            if self.total["likesthreshold"] != 0:
+                random_time = round(random.uniform(900, 1500), 2)
+                time.sleep(random_time)
+            self.total["likesthreshold"] = self.total["likesthreshold"] + 100
+    else:
+        random_time = round(random.uniform(5, 15), 2)
+        time.sleep(random_time)
+    return True
+
+
+def watch_stories(self, user_id):
+    if self.watch_users_reels(user_id):
+        self.logger.info("Total stories viewed: %d" % self.total["stories_viewed"])
 
 
 def like_users(self, user_ids, nlikes=None, filtration=True):

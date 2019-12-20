@@ -26,11 +26,11 @@ myFollowing = []
 foler = utils.file("myFollowers.txt")
 foling = utils.file("myFollowing.txt")
 for username in args.users:
-    followers = bot.get_user_followers(username, 100000)
+    followers = bot.get_user_followers(username, 9000)
     for follower in followers:
         myFollowers.append(follower)
     foler.save_list(myFollowers)
-    followings = bot.get_user_following(username, 100000)
-    for following in followings:
-        myFollowing.append(following)
-    foling.save_list(myFollowing)
+    #followings = bot.get_user_following(username, 100000)
+    #for following in followings:
+    #    myFollowing.append(following)
+    #foling.save_list(myFollowing)

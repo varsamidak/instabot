@@ -539,25 +539,21 @@ class API(object):
                 if (response_data.get('message') == 'Media not found or unavailable'):
                     self.logger.info("Post has been deleted")
                     return False
-                if (response_data.get(
-                        'feedback_message') == 'This action was blocked. Please try again later. We restrict certain content and actions to protect our community. Tell us if you think we made a mistake.'):
+                if response_data.get(
+                        'message') == 'challenge_required' or response_data.get(
+                        'message') == 'feedback_required' or response_data.get(
+                        'feedback_message') == 'This action was blocked. Please try again later. We restrict certain content and actions to protect our community. Tell us if you think we made a mistake.':
                     self.logger.error("Instagram error message: %s", response_data.get('message'))
                     self.logger.error("Instagram error message: %s", response_data.get('feedback_message'))
+                    self.logger.error("sleeping...")
                     report = self.session.post(config.API_URL + 'repute/report_problem/instagram_like_add',
                                                data={'_csrftoken': self.token,
                                                      '_uid': self.user_id,
                                                      '_uuid': self.uuid,
                                                      },
                                                allow_redirects=True)
-                    self.first_block = True
-                    if(self.final_block):
-                        time.sleep(60 * 60 * 24)
-                    elif(self.second_block):
-                        time.sleep(60 * 60)
-                        self.final_block = True
-                    elif(self.first_block):
-                        time.sleep(60 * 30)
-                        self.second_block = True
+
+                    time.sleep(60 * 60 * 24)
 
 
                 else:
