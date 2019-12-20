@@ -10,48 +10,15 @@ def follow(self, user_id):
     if not self.check_user(user_id):
         return False
     if not self.reached_limit("follows"):
-        if self.blocked_actions["follows"]:
-            self.logger.warning("YOUR `FOLLOW` ACTION IS BLOCKED")
-            if self.blocked_actions_protection:
-                self.logger.warning(
-                    "blocked_actions_protection ACTIVE. "
-                    "Skipping `follow` action."
-                )
-                return False
         self.delay("follow")
-        _r = self.api.follow(user_id)
-        if _r == "feedback_required":
-            self.logger.error("`Follow` action has been BLOCKED...!!!")
-            if not self.blocked_actions_sleep:
-                if self.blocked_actions_protection:
-                    self.logger.warning("Activating blocked actions \
-                        protection for `Follow` action.")
-                    self.blocked_actions["follows"] = True
-            else:
-                if self.sleeping_actions["follows"] \
-                        and self.blocked_actions_protection:
-                    self.logger.warning("This is the second blocked \
-                        `Follow` action.")
-                    self.logger.warning("Activating blocked actions \
-                        protection for `Follow` action.")
-                    self.sleeping_actions["follows"] = False
-                    self.blocked_actions["follows"] = True
-                else:
-                    self.logger.info("`Follow` action is going to sleep \
-                        for %s seconds." % self.blocked_actions_sleep_delay)
-                    self.sleeping_actions["follows"] = True
-                    time.sleep(self.blocked_actions_sleep_delay)
-            return False
-        if _r:
+        response = self.api.follow(user_id)
+        if response:
             msg = "===> FOLLOWED <==== `user_id`: {}.".format(user_id)
             self.console_print(msg, "green")
             self.total["follows"] += 1
             self.followed_file.append(user_id)
             if user_id not in self.following:
                 self.following.append(user_id)
-            if self.blocked_actions_sleep and self.sleeping_actions["follows"]:
-                self.logger.info("`Follow` action is no longer sleeping.")
-                self.sleeping_actions["follows"] = False
             return True
     else:
         self.logger.info("Out of follows for today.")
@@ -82,23 +49,14 @@ def follow_users(self, results, bot):
 
     msg = "Going to follow {} users.".format(len(user_ids))
     self.logger.info(msg)
-    skipped = self.skipped_file
-    followed = self.followed_file
-    unfollowed = self.unfollowed_file
-    self.console_print(msg, "green")
 
-    # Remove skipped and already followed and unfollowed list from user_ids
-    user_ids = list(
-        set(user_ids) - skipped.set - followed.set - unfollowed.set
-    )
-    user_ids = user_ids[:nfollows] if nfollows else user_ids
-    msg = (
-        "After filtering followed, unfollowed and "
-        "`{}`, {} user_ids left to follow."
-    ).format(skipped.fname, len(user_ids))
-    self.console_print(msg, "green")
-    for user_id in tqdm(user_ids, desc="Processed users"):
-        if self.reached_limit("follows"):
+    self.console_print(msg, 'green')
+
+    msg = 'After filtering followed, unfollowed and `{}`, {} user_ids left to follow.'
+    msg = msg.format(skipped.fname, len(user_ids))
+    self.console_print(msg, 'green')
+    for idx, user_id in enumerate(tqdm(user_ids, desc='Processed users')):
+        if self.reached_limit('follows'):
             self.logger.info("Out of follows for today.")
             break
         random_sleep = round(random.uniform(40, 120), 2)
@@ -107,10 +65,9 @@ def follow_users(self, results, bot):
         if not self.follow(user_ids[idx]):
             random_sleep = round(random.uniform(3, 5), 2)
             if self.api.last_response.status_code == 404:
-                self.console_print(
-                    "404 error user {user_id} doesn't exist.", "red"
-                )
-                broken_items.append(user_id)
+                self.console_print("404 error user {user_ids[idx]} doesn't exist.", 'red')
+                broken_items.append(user_ids[idx])
+                continue
 
             elif self.api.last_response.status_code == 200:
                 broken_items.append(user_ids[idx])
@@ -175,9 +132,7 @@ def follow_followers(self, user_id, nfollows=None):
     followers = self.get_user_followers(user_id, nfollows)
     followers = list(set(followers) - set(self.blacklist))
     if not followers:
-        self.logger.info(
-            "{} not found / closed / has no followers.".format(user_id)
-        )
+        self.logger.info("{} not found / closed / has no followers.".format(user_id))
     else:
         self.follow_users(followers[:nfollows])
 
@@ -192,9 +147,7 @@ def follow_following(self, user_id, nfollows=None):
         return
     followings = self.get_user_following(user_id)
     if not followings:
-        self.logger.info(
-            "{} not found / closed / has no following.".format(user_id)
-        )
+        self.logger.info("{} not found / closed / has no following.".format(user_id))
     else:
         self.follow_users(followings[:nfollows])
 
