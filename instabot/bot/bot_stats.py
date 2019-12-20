@@ -60,7 +60,7 @@ def analyze_media(self, username, amount, filtration = False):
         return False
     for media in medias:
         media_info = self.get_media_info(media)
-        if media_info[0]["usertags"]:
+        if "usertags" in media_info[0]:
             for t in media_info[0]["usertags"]["in"]:
                 tag = t["user"]["username"]
                 tags_adder(self, tag)
